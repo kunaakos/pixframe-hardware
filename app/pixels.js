@@ -15,7 +15,9 @@ var _pattern = null,
   */
   _init = function(callback) {
     _updateData(function(){
-      if (callback) callback(_pattern, _palette);
+      if (callback) {
+        callback(_pattern, _palette);
+      }
     });
 
     // listens for pattern changes, fires callback
@@ -40,7 +42,7 @@ var _pattern = null,
       _palette = data.val().palette;
       if (callback) {
         callback();
-      };
+      }
     });
   },
 
@@ -51,8 +53,8 @@ var _pattern = null,
     _updateData(function() {
       if (callback) {
         callback(_pattern, _palette);
-      };
-  })
+      }
+    });
   },
 
   /**
@@ -74,8 +76,7 @@ var _pattern = null,
   */
   _returnPalette = function() {
     return _palette;
-  }
-
+  };
 
 return {
     init: _init,

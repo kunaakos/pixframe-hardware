@@ -1,5 +1,5 @@
 var consolePrint = (function() {
-  var _initialized = false;
+  var _initialized = false,
 
       _init = function(){
         _clear();
@@ -15,17 +15,17 @@ var consolePrint = (function() {
         var rows = pattern.length,
             columns = pattern[0].length;
         _clear();
-        console.log(rows + 'x' + columns + ' matrix, current pattern:\n')
+        console.log(rows + 'x' + columns + ' matrix, current pattern:\n');
         for (var i = 0; i < rows; i++) {
           console.log(pattern[i].join('\t')+'\n\n');
-        };
+        }
         console.log('Press <ctrl>+C to exit.');
-      },
+      };
 
-      _hexToInt = function(hex) {
-        var result = /^#?([a-f\d]{6})$/i.exec(hex);
-        return result ? parseInt(result[1], 16) : null;
-      }
+      // _hexToInt = function(hex) {
+      //   var result = /^#?([a-f\d]{6})$/i.exec(hex);
+      //   return result ? parseInt(result[1], 16) : null;
+      // };
 
   return {
     init: _init,

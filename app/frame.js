@@ -29,7 +29,7 @@ var frame = (function() {
         _pixelData = _patternToPixelData(pattern, true, false, true, true);
         if (_initialized) {
           _leds.render(_pixelData);
-        };
+        }
       },
 
       /**
@@ -47,30 +47,31 @@ var frame = (function() {
         var columns = pattern[0].length;
         var pixelDataBuf = new Uint32Array(_NUM_LEDS);
         var patternBuf = pattern.slice();
+        var row = 0;
         
         if (upsideDown) {
           patternBuf = patternBuf.reverse();
-        };
+        }
 
         if (mirrored) {
-          for (var row = 0; row < rows; row++) {
+          for ( row = 0; row < rows; row++) {
             patternBuf[row] = patternBuf[row].reverse();
-          };
-        };
+          }
+        }
 
         if (zigZag) {
-          for (var row = 0; row < rows; row++) {
-            if (Boolean(row % 2) == firstLTR) {
+          for ( row = 0; row < rows; row++) {
+            if (Boolean(row % 2) === firstLTR) {
               patternBuf[row] = patternBuf[row].reverse();
             }
-          };
-        };
+          }
+        }
 
-        for (var row = 0; row < rows; row++) {
+        for ( row = 0; row < rows; row++) {
           for (var column = 0; column < columns; column++) {
             pixelDataBuf[row * rows + column] =  _hexToInt(_palette[patternBuf[row][column]]);
-          };
-        };
+          }
+        }
 
         return pixelDataBuf;
       },
@@ -81,7 +82,7 @@ var frame = (function() {
       _hexToInt = function(hex) {
         var result = /^#?([a-f\d]{6})$/i.exec(hex);
         return result ? parseInt(result[1], 16) : null;
-      }
+      };
 
   return {
     init: _init,

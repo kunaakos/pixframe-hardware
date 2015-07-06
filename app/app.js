@@ -1,4 +1,4 @@
-var frame =  require('./frame')
+var frame =  require('./frame');
 var pixels = require('./pixels');
 var consolePrint = require('./consoleprint');
 
@@ -14,4 +14,5 @@ pixels.setPatternChangeCb(function(pattern, palette){
 process.on('SIGINT', function () {
   frame.reset();
   process.nextTick(function () { process.exit(0); });
+
 });
