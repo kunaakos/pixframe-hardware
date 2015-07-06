@@ -28,7 +28,7 @@ module.exports = function(grunt) {
     rsync: {
         options: {
             args: ["--verbose"],
-            exclude: [".git*","*.scss"],
+            exclude: [".git*","*.scss","node_modules"],
             recursive: true
         },
         prod: {
@@ -36,7 +36,7 @@ module.exports = function(grunt) {
                 src: ".",
                 dest: "/home/pi/pixframe-hardware",
                 host: "pi@raspixframe.local",
-                delete: false // Careful this option could cause data loss, read the docs!
+                delete: true // Careful this option could cause data loss, read the docs!
             }
         }
     }

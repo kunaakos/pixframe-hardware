@@ -11,14 +11,18 @@ var _pattern = null,
 
   /**
   * Gets data from firebase, passes pattern and palette to callback if specified
-  * NEED to _setPatternChangeCb, as this callback only fires once on init
+  * uses callback on pattern change if setAsPatternChangeCb is true
   */
-  _init = function(callback) {
+  _init = function(callback, setAsPatternChangeCb) {
     _updateData(function(){
       if (callback) {
         callback(_pattern, _palette);
       }
     });
+
+    if (setAsPatternChangeCb) {
+      _patternChangeCb = callback;
+    }
 
     // listens for pattern changes, fires callback
     source.on('child_changed', function() {
