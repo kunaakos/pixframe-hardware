@@ -1,0 +1,32 @@
+{
+  "name": "pixframe-hardware",
+  "version": "1.0.0",
+  "description": "Code running on Pixframe hardware.",
+  "main": "app/app.js",
+  "dependencies": {
+    "firebase": "^2.2.7",
+    "rpi-ws281x-native": "^0.4.0"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5"
+  },
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kunaakos/pixframe-hardware.git"
+  },
+  "keywords": [
+    "raspberrypi",
+    "node.js",
+    "IoT",
+    "neopixel"
+  ],
+  "author": "Kún Ákos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kunaakos/pixframe-hardware/issues"
+  },
+  "homepage": "http://pixframe.kunakos.ro/"
+}
