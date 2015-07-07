@@ -24,6 +24,10 @@ module.exports = function(grunt) {
         files: '<%= jshint.app.src %>',
         tasks: ['jshint:app']
       },
+      appDeploy: {
+        files: '<%= jshint.app.src %>',
+        tasks: ['jshint:app','rsync:prod']
+      },
     },
     rsync: {
         options: {
@@ -48,8 +52,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks("grunt-rsync");
 
   // Default task.
-  grunt.registerTask('default', ['jshint', 'watch']);
+  grunt.registerTask('default', ['jshint', 'watch:app']);
   // rsync deploy over LAN
   grunt.registerTask('deploy', ['rsync:prod']);
+  grunt.registerTask('cont-deploy', ['jshint', 'watch:appDeploy']);
+
 
 };
