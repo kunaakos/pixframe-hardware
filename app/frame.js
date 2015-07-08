@@ -1,7 +1,5 @@
 var frame = (function() {
   var _leds = require('rpi-ws281x-native'),
-      _NUM_LEDS = 60,
-      _initialized = false,
       _paletteRGB = null,
       _targetPattern = null,
       _currentPattern = null,
@@ -10,11 +8,10 @@ var frame = (function() {
       /**
        * Initialises ws281x leds
        */
-      _init = function(pattern, palette){
-        _leds.init(_NUM_LEDS);
-        _setPattern(pattern, palette);
-        _currentPattern = _patternToRGB(pattern);
-        _initialized = true;
+      _init = function(rows, columns, upsideDown, mirrored, zigZag, firstLTR){
+        _leds.init(rows*columns);
+        _leds.setIndexMapping(_generateSourceMap(rows, columns, upsideDown, mirrored, zigZag, firstLTR));
+        _currentPattern = _createArray(rows, columns, [0,0,0]); // dark on init;
       },
 
       /**
@@ -25,11 +22,17 @@ var frame = (function() {
       },
 
       /**
+       * Updates _paletteRGB
+       */
+      _setPalette = function(palette){
+        palette[0] = '#000000'; // debug
+        _paletteRGB = _paletteToRGB(palette);
+      },
+
+      /**
        * Updates _targetPattern
        */
-      _setPattern = function(pattern, palette) {
-        palette[0] = '#000000';
-        _paletteRGB = _paletteToRGB(palette);
+      _setPattern = function(pattern) {
         _targetPattern = _patternToRGB(pattern);
         if (!_fadeInterval) {
           _fadeInterval = setInterval(function(){
@@ -39,25 +42,32 @@ var frame = (function() {
               // console.log('cleared int');
             }
           }, 4); //4ms is ~24-25fps
-
         }
       },
 
+      /**
+       * Pattern received is an array of palette indexes
+       * Returns an array of [r, g, b] values for use in this module
+       */
       _patternToRGB = function(pattern){
         var buf = [];
         while(buf.push([]) < pattern.length){}
         pattern.forEach(function(row, rowIndex){
-          row.forEach(function(currentVal, colIndex){
-            buf[rowIndex][colIndex] = _paletteRGB[currentVal];
+          row.forEach(function(currentVal){
+            buf[rowIndex].push(_paletteRGB[currentVal]);
           });
         });
         return buf;
       },
 
+      /**
+       * Palette received is an arra of HEX color codes
+       * Returns an array of [r, g, b] values for use in this module
+       */
       _paletteToRGB = function(palette)  {
         var paletteRGB = [];
-        palette.forEach(function(HEXcolor, index){
-          paletteRGB[index] = _HEXToRGB(HEXcolor);
+        palette.forEach(function(HEXcolor){
+          paletteRGB.push(_HEXToRGB(HEXcolor));
         });
         return paletteRGB;
       },
@@ -69,15 +79,15 @@ var frame = (function() {
       _refreshLEDs = function() {
         var stillFading = false;
         if (_currentPattern && _paletteRGB) {
-          _currentPattern.forEach(function(row, rowIndex){
-            row.forEach(function(currentVal, colIndex){
-                if(_fadeLED(rowIndex, colIndex)) {
+          for (var row = 0; row < _currentPattern.length; row++) {
+              for (var col = 0; col < _currentPattern[0].length; col++) {
+                if(_fadeLED(row, col)) {
                   stillFading = true;
                 }
-            });
-          });
+              }
+          }
+          _leds.render(_patternToPixelData(_currentPattern));
         }
-        _leds.render(_patternToPixelData(_currentPattern, true, false, true, true));
         return stillFading;
       },
 
@@ -90,27 +100,42 @@ var frame = (function() {
         var targetColor = _targetPattern[row][col];
         var stillFading = false;
 
-        currentColor.forEach(function(c, ci){
-          if (Math.abs(c - targetColor[ci]) < 8) {
+        for (var ci = 0; ci < 3; ci++) {
+          if (Math.abs(currentColor[ci] - targetColor[ci]) < 8) {
             currentColor[ci] = targetColor[ci];
-          } else if (c > targetColor[ci]) {
+          } else if (currentColor[ci] > targetColor[ci]) {
             currentColor[ci] = currentColor[ci] - 8;
             stillFading = true;
-          } else if (c < targetColor[ci]) {
+          } else if (currentColor[ci] < targetColor[ci]) {
             currentColor[ci] = currentColor[ci] + 8;
             stillFading = true;
           } else {
             return false;
           }
-        });
+        }
 
-        _currentPattern[row][col] = currentColor.slice();
         return stillFading;
       },
 
       /**
-       * Manipulates pattern array and generates pixelData to be sent to ws218x leds
-       * Used this instead of .setIndexMapping() as it is easier and cleaner
+       * Returns pixelData to be sent to ws218x leds
+       */
+      _patternToPixelData = function(pattern) {
+        var rows = pattern.length;
+        var columns = pattern[0].length;
+        var pixelDataBuf = new Uint32Array(rows * columns);
+
+        for (var row = 0; row < rows; row++) {
+          for (var column = 0; column < columns; column++) {
+            pixelDataBuf[row * rows + column] =  _RGBToInt(pattern[row][column]);
+          }
+        }
+
+        return pixelDataBuf;
+      },
+
+      /**
+       * Generates a source map for ws281x lib
        *
        * pattern is a 2d array
        * upsideDown: true if rows on matrix start from the bottom
@@ -118,40 +143,49 @@ var frame = (function() {
        * zigZag: true if led strips are wired up in an "S" pattern
        * firstLTR: used with zigZag, true if the first row needs to be left to right
        */
-      _patternToPixelData = function(pattern, upsideDown, mirrored, zigZag, firstLTR) {
-        var rows = pattern.length;
-        var columns = pattern[0].length;
-        var pixelDataBuf = new Uint32Array(_NUM_LEDS);
-        var patternBuf = pattern.map(function(arr) {
-            return arr.slice();
-        });
+      _generateSourceMap = function(rows, columns, upsideDown, mirrored, zigZag, firstLTR) {
         var row = 0;
+        var map2d = _createArray(rows, columns, false);
+        var map = [];
 
         if (upsideDown) {
-          patternBuf = patternBuf.reverse();
+          map2d = map2d.reverse();
         }
 
         if (mirrored) {
-          for ( row = 0; row < rows; row++) {
-            patternBuf[row] = patternBuf[row].reverse();
+          for (row = 0; row < rows; row++) {
+            map2d[row] = map2d[row].reverse();
           }
         }
 
         if (zigZag) {
-          for ( row = 0; row < rows; row++) {
+          firstLTR = firstLTR;
+          for (row = 0; row < rows; row++) {
             if (Boolean(row % 2) === firstLTR) {
-              patternBuf[row] = patternBuf[row].reverse();
+              map2d[row] = map2d[row].reverse();
             }
           }
         }
 
-        for ( row = 0; row < rows; row++) {
-          for (var column = 0; column < columns; column++) {
-            pixelDataBuf[row * rows + column] =  _RGBToInt(patternBuf[row][column]);
+        map = map.concat.apply(map, map2d);
+        return map;
+      },
+
+      _createArray = function(rows, columns, fillValue){
+        var arr = [];
+        for (var row = 0; row < rows; row++) {
+          arr.push([]);
+          for (var col = 0; col < columns; col++) {
+            if (fillValue) {
+              if (fillValue.constructor === Array) {
+                arr[row].push(fillValue.slice());
+              }
+            } else {
+              arr[row].push(row * columns + col);
+            }
           }
         }
-
-        return pixelDataBuf;
+        return arr;
       },
 
       /**
@@ -176,7 +210,8 @@ var frame = (function() {
   return {
     init: _init,
     reset: _reset,
-    setPattern: _setPattern
+    setPattern: _setPattern,
+    setPalette: _setPalette
   };
 })();
 

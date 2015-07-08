@@ -5,10 +5,12 @@ var consolePrint = require('./consoleprint');
 consolePrint.init();
 
 pixels.init(function(pattern, palette){
-  frame.init(pattern, palette);
-  frame.setPattern(pattern, palette);
-  pixels.setPatternChangeCb(function(pattern, palette){
-    frame.setPattern(pattern, palette);
+  frame.init(8, 8, true, false, true, true);
+  frame.setPalette(palette);
+  frame.setPattern(pattern);
+  consolePrint.update(pattern);
+  pixels.setPatternChangeCb(function(pattern){
+    frame.setPattern(pattern);
     consolePrint.update(pattern);
   });
 }, false);
