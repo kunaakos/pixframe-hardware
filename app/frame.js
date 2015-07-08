@@ -1,6 +1,8 @@
 var frame = (function() {
+
   var _leds = require('rpi-ws281x-native'),
       _paletteRGB = null,
+      _targetPatternIndexed = null, //store a non-RGB version, needed when pallette changes
       _targetPattern = null,
       _currentPattern = null,
       _fadeInterval = null,
@@ -25,23 +27,20 @@ var frame = (function() {
        * Updates _paletteRGB
        */
       _setPalette = function(palette){
-        palette[0] = '#000000'; // debug
         _paletteRGB = _paletteToRGB(palette);
+        if (_targetPatternIndexed) {
+          _setPattern(_targetPatternIndexed); //trigger refresh with new colors
+        }
       },
 
       /**
        * Updates _targetPattern
        */
       _setPattern = function(pattern) {
-        _targetPattern = _patternToRGB(pattern);
-        if (!_fadeInterval) {
-          _fadeInterval = setInterval(function(){
-            if (!_refreshLEDs()) {
-              clearInterval(_fadeInterval);
-              _fadeInterval = null;
-              // console.log('cleared int');
-            }
-          }, 4); //4ms is ~24-25fps
+        _targetPatternIndexed = pattern;
+        if (_paletteRGB) {
+          _targetPattern = _patternToRGB(pattern);
+          _startFade();
         }
       },
 
@@ -72,22 +71,34 @@ var frame = (function() {
         return paletteRGB;
       },
 
+      _startFade = function() {
+        if (!_fadeInterval) {
+          _fadeInterval = setInterval(function(){
+            if (!_refreshLEDs()) {
+              clearInterval(_fadeInterval);
+              _fadeInterval = null;
+              // console.log('cleared int');
+            }
+          }, 4); //4ms is ~24-25fps
+        }
+      },
+
       /**
        * Updates ws281x leds, handles fading
        * returns true if fading was needed, false if not
        */
       _refreshLEDs = function() {
         var stillFading = false;
-        if (_currentPattern && _paletteRGB) {
-          for (var row = 0; row < _currentPattern.length; row++) {
-              for (var col = 0; col < _currentPattern[0].length; col++) {
-                if(_fadeLED(row, col)) {
-                  stillFading = true;
-                }
+
+        for (var row = 0; row < _currentPattern.length; row++) {
+            for (var col = 0; col < _currentPattern[0].length; col++) {
+              if(_fadeLED(row, col)) {
+                stillFading = true;
               }
-          }
-          _leds.render(_patternToPixelData(_currentPattern));
+            }
         }
+        _leds.render(_patternToPixelData(_currentPattern));
+
         return stillFading;
       },
 
@@ -213,6 +224,7 @@ var frame = (function() {
     setPattern: _setPattern,
     setPalette: _setPalette
   };
+
 })();
 
 module.exports = frame; 

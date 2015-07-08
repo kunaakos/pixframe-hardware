@@ -4,92 +4,77 @@ var Firebase = require("firebase");
 
 var pixels = (function() {
 
-var _pattern = null,
-    _palette = null,
-    _patternChangeCb = null,
-    source = new Firebase('https://pixframe.firebaseio.com/'),
+  var _pattern = null,
+      _palette = null,
+      _patternChangeCb = null,
+      _paletteChangeCb = null,
+      _firebase = new Firebase('https://pixframe.firebaseio.com/'),
+      _patternSource = _firebase.child('pattern'),
+      _paletteSource = _firebase.child('palette'),
 
-  /**
-  * Gets data from firebase, passes pattern and palette to callback if specified
-  * uses callback on pattern change if setAsPatternChangeCb is true
-  */
-  _init = function(callback, setAsPatternChangeCb) {
-    _updateData(function(){
-      if (callback) {
-        callback(_pattern, _palette);
-      }
-    });
+    /**
+    * Gets data from firebase, passes pattern and palette to callback if specified
+    * uses callback on pattern change if setAsPatternChangeCb is true
+    */
+    _init = function(patternChangeCb, paletteChangeCb) {
+      // sets callbacks
+      _patternChangeCb = patternChangeCb;
+      _paletteChangeCb = paletteChangeCb;
 
-    if (setAsPatternChangeCb) {
+      // listens for pattern changes, fires callback
+      _patternSource.on('value', function(data) {
+        _patternChangeCb(data.val());
+      });
+
+      // listens for palette changes, fires callback
+      _paletteSource.on('value', function(data) {
+        _paletteChangeCb(data.val());
+      });
+    },
+
+    /**
+    * Sets callback that's fired every time the pattern is changed
+    */
+    _setPatternChangeCb = function(callback) {
       _patternChangeCb = callback;
-    }
+    },
 
-    // listens for pattern changes, fires callback
-    source.on('child_changed', function() {
-      _getPattern(_patternChangeCb);
-    });
-  },
+    /**
+    * Sets callback that's fired every time the palette is changed
+    */
+    _setPaletteChangeCb = function(callback) {
+      _paletteChangeCb = callback;
+    },
 
-  /**
-  * Sets callback that's fired every time the pattern is changed
-  */
-  _setPatternChangeCb = function(callback) {
-    _patternChangeCb = callback;
-  },
+    /**
+    * Updates a single pixel
+    */
+    _setPixel = function(row, col, val) {
+      _pattern.child(row + '/' + col).set(val);
+    },
 
-  /**
-  * Gets ALL data from firebase: pattern, palette
-  */
-  _updateData = function(callback) {
-    source.once('value', function(data) {
-      _pattern = data.val().pattern;
-      _palette = data.val().palette;
-      if (callback) {
-        callback();
-      }
-    });
-  },
+    /**
+    * Returns the current pattern
+    */
+    _returnPattern = function() {
+      return _pattern;
+    },
 
-  /**
-  * Gets data with _updateData(), passes fresh values to specified callback 
-  */
-  _getPattern = function(callback) {
-    _updateData(function() {
-      if (callback) {
-        callback(_pattern, _palette);
-      }
-    });
-  },
+    /**
+    * Returns the current palette
+    */
+    _returnPalette = function() {
+      return _palette;
+    };
 
-  /**
-  * Updates a single pixel
-  */
-  _setPixel = function(row, col, val) {
-    source.child('pattern/' + row + '/' + col).set(val);
-  },
-
-  /**
-  * Returns the current pattern
-  */
-  _returnPattern = function() {
-    return _pattern;
-  },
-
-  /**
-  * Returns the current palette
-  */
-  _returnPalette = function() {
-    return _palette;
+  return {
+      init: _init,
+      set: _setPixel,
+      returnPalette: _returnPalette,
+      returnPattern: _returnPattern,
+      setPatternChangeCb: _setPatternChangeCb,
+      setPaletteChangeCb: _setPaletteChangeCb
   };
-
-return {
-    init: _init,
-    set: _setPixel,
-    returnPalette: _returnPalette,
-    returnPattern: _returnPattern,
-    getPattern: _getPattern,
-    setPatternChangeCb: _setPatternChangeCb
-};
 
 })();
 

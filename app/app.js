@@ -2,18 +2,19 @@ var frame =  require('./frame');
 var pixels = require('./pixels');
 var consolePrint = require('./consoleprint');
 
-consolePrint.init();
-
-pixels.init(function(pattern, palette){
-  frame.init(8, 8, true, false, true, true);
-  frame.setPalette(palette);
+var patternCb = function(pattern) {
   frame.setPattern(pattern);
   consolePrint.update(pattern);
-  pixels.setPatternChangeCb(function(pattern){
-    frame.setPattern(pattern);
-    consolePrint.update(pattern);
-  });
-}, false);
+};
+
+var paletteCb = function(palette) {
+  frame.setPalette(palette);
+};
+
+consolePrint.init();
+
+frame.init(8, 8, true, false, true, true);
+pixels.init(patternCb, paletteCb);
 
 process.on('SIGINT', function () {
   frame.reset();
