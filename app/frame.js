@@ -50,7 +50,8 @@ var frame = (function() {
        */
       _patternToRGB = function(pattern){
         var buf = [];
-        while(buf.push([]) < pattern.length){}
+        var len = pattern.length;
+        while(buf.push([]) < len){}
         pattern.forEach(function(row, rowIndex){
           row.forEach(function(currentVal){
             buf[rowIndex].push(_paletteRGB[currentVal]);
@@ -89,9 +90,11 @@ var frame = (function() {
        */
       _refreshLEDs = function() {
         var stillFading = false;
+        var rows = _currentPattern.length;
+        var columns = _currentPattern[0].length;
 
-        for (var row = 0; row < _currentPattern.length; row++) {
-            for (var col = 0; col < _currentPattern[0].length; col++) {
+        for (var row = 0; row < rows; row++) {
+            for (var col = 0; col < columns; col++) {
               if(_fadeLED(row, col)) {
                 stillFading = true;
               }
@@ -105,6 +108,7 @@ var frame = (function() {
       /**
        * Fades a single led
        * returns true if fading was needed, false if not
+       * NOTE: needs better algorithm
        */
       _fadeLED = function(row, col) {
         var currentColor = _currentPattern[row][col];
@@ -190,6 +194,8 @@ var frame = (function() {
             if (fillValue) {
               if (fillValue.constructor === Array) {
                 arr[row].push(fillValue.slice());
+              } else {
+                arr[row].push(fillValue);
               }
             } else {
               arr[row].push(row * columns + col);

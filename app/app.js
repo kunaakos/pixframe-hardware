@@ -11,17 +11,23 @@ var paletteCb = function(palette) {
   frame.setPalette(palette);
 };
 
-consolePrint.init();
+var doExit = function() {
+  frame.reset();
+  // disconnect from firebase mabeh?
+  process.nextTick(function () { // read up on nextTick()
+    console.log('shut it down! shut it down!');
+    process.exit(0);
+  });
+};
 
+consolePrint.init();
 frame.init(8, 8, true, false, true, true);
 pixels.init(patternCb, paletteCb);
 
 process.on('SIGINT', function () {
-  frame.reset();
-  process.nextTick(function () { process.exit(0); });
+  doExit();
 });
 
-process.once('SIGUSR2', function () {
-  frame.reset();
-  process.kill(process.pid, 'SIGUSR2');
+process.on('SIGUSR2', function () {
+  doExit();
 });
