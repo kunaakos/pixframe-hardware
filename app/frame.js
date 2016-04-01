@@ -69,6 +69,7 @@ var frame = (function() {
         palette.forEach(function(HEXcolor){
           paletteRGB.push(_HEXToRGB(HEXcolor));
         });
+        paletteRGB[0] = _HEXToRGB('#000000'); // 0 is always black on frame
         return paletteRGB;
       },
 
@@ -233,4 +234,4 @@ var frame = (function() {
 
 })();
 
-module.exports = frame; 
+module.exports = frame;
